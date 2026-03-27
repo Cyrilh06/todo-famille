@@ -117,8 +117,6 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:1
 .task-del:hover{color:var(--forte-txt);background:var(--forte-bg);}
 .task-del svg{width:14px;height:14px;}
 
-.task-timer{font-size:.68rem;color:var(--muted);display:none;padding:0 12px 9px;text-align:right;font-style:italic;}
-.task-row.checking .task-timer{display:block;}
 
 /* NOUVELLE LIGNE */
 .new-task-row{border-radius:var(--radius);border:2px dashed var(--accent);background:#FFFDF9;margin-bottom:8px;padding:13px 15px;animation:rowIn .2s ease;}
@@ -259,7 +257,6 @@ const SKEY      = "todo_url_v3";
 const LTASKS    = "todo_tasks_v3";
 const LDONE     = "todo_done_v3";
 const POLL_MS   = 6000;
-const DELAY_MS  = 15 * 60 * 1000;   // 15 min
 const MAX_DONE  = 20;
 const DAYS_MS   = 14 * 86400 * 1000;
 
@@ -269,7 +266,6 @@ let done    = parse(localStorage.getItem(LDONE));
 let fperson = "all", fprio = "all", tab = "active";
 let adding  = false;
 let newP    = "cyril,laurie", newPr = "moyenne";
-let timers  = {};   // id → {timeout, interval}
 
 // ──────────────────────────────────────────────
 //  BOOT
@@ -443,7 +439,6 @@ function toDone(id) {
   tasks = tasks.filter(x => x.id !== id);
   done.unshift({ ...t, doneAt:Date.now() });
   done = clean(done);
-  clearTimer(id);
   push({ action:"complete", id, doneTask:{ ...t, doneAt:Date.now() } });
   render();
 }
@@ -454,51 +449,15 @@ function delDone(id) {
 }
 
 // ──────────────────────────────────────────────
-//  CHECK / UNCHECK
+//  CHECK — bascule immédiate dans terminées
 // ──────────────────────────────────────────────
 function toggleCheck(id) {
   const row = document.getElementById("r"+id);
   if (!row) return;
-  if (row.classList.contains("checking")) {
-    // annuler
-    clearTimer(id);
-    row.classList.remove("checking");
-    const te = row.querySelector(".task-timer");
-    if (te) te.textContent = "";
-  } else {
-    row.classList.add("checking");
-    startTimer(id, row);
-  }
-}
 
-function startTimer(id, row) {
-  let rem = Math.round(DELAY_MS / 1000);
-  const te = row.querySelector(".task-timer");
-  tick(te, rem);
-  const iv = setInterval(() => {
-    rem--;
-    if (rem <= 0) { clearInterval(iv); return; }
-    tick(te, rem);
-  }, 1000);
-  const to = setTimeout(() => {
-    clearInterval(iv);
-    toDone(id);
-  }, DELAY_MS);
-  timers[id] = { to, iv };
-}
-
-function clearTimer(id) {
-  if (timers[id]) {
-    clearTimeout(timers[id].to);
-    clearInterval(timers[id].iv);
-    delete timers[id];
-  }
-}
-
-function tick(el, s) {
-  if (!el) return;
-  const m = Math.floor(s/60), sec = s%60;
-  el.textContent = `✔ Fait — archivage dans ${m}:${String(sec).padStart(2,"0")} (cliquez pour annuler)`;
+  // Animation visuelle rapide avant de basculer
+  row.classList.add("checking");
+  setTimeout(() => toDone(id), 600);
 }
 
 // ──────────────────────────────────────────────
@@ -554,13 +513,8 @@ function renderActive(wrap) {
         <button class="task-del" onclick="delTask('${t.id}')" title="Supprimer">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
         </button>
-      </div>
-      <div class="task-timer"></div>`;
+      </div>`;
     wrap.appendChild(el);
-    // Restaurer état coché si le timer tourne encore
-    if (timers[t.id]) {
-      el.classList.add("checking");
-    }
   });
 }
 
