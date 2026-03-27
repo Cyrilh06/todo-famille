@@ -23,21 +23,27 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:1
 .header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
 .app-title{font-family:'Fraunces',serif;font-size:1.55rem;font-weight:500;letter-spacing:-.01em;}
 .app-title em{font-style:italic;color:var(--accent);}
-/* SYNC BAR */
-.sync-bar{display:flex;align-items:center;gap:10px;padding:6px 28px;font-size:.78rem;font-weight:500;border-bottom:1px solid var(--border);transition:background .3s,color .3s;background:var(--faible-bg);color:var(--faible-txt);}
-.sync-bar.loading{background:var(--moyenne-bg);color:var(--moyenne-txt);}
-.sync-bar.err    {background:var(--forte-bg);  color:var(--forte-txt);}
-.sync-bar.pending{background:#FFF8EC;           color:#92620A;border-bottom-color:#F5DBA0;}
-.sync-bar.hidden {display:none;}
-.sync-dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0;}
-.sync-bar.loading .sync-dot{animation:blink 1s infinite;}
+/* SYNC PILL */
+.sync-pill{display:flex;align-items:center;gap:6px;padding:5px 11px;border-radius:20px;border:1px solid var(--faible-brd);background:var(--faible-bg);cursor:pointer;transition:all .25s;user-select:none;}
+.sync-pill.loading{border-color:var(--moyenne-brd);background:var(--moyenne-bg);}
+.sync-pill.pending{border-color:#F5DBA0;background:#FFF8EC;}
+.sync-pill.err    {border-color:var(--forte-brd);background:var(--forte-bg);}
+.sync-pill.hidden {display:none;}
+.sync-pill:hover  {filter:brightness(.95);}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--faible-txt);flex-shrink:0;transition:background .25s;}
+.sync-pill.loading .sync-dot{background:var(--moyenne-txt);animation:blink 1s infinite;}
+.sync-pill.pending .sync-dot{background:#B7770D;animation:blink 1s infinite;}
+.sync-pill.err     .sync-dot{background:var(--forte-txt);}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
-.sync-txt{flex:1;}
-.sync-time{font-size:.7rem;opacity:.7;margin-left:auto;}
-.btn-sync{padding:3px 12px;border-radius:20px;border:1.5px solid currentColor;background:transparent;font-family:'Jost',sans-serif;font-size:.74rem;font-weight:600;color:inherit;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px;white-space:nowrap;}
-.btn-sync:hover{opacity:.75;}
-.btn-sync:disabled{opacity:.4;cursor:default;}
-.btn-sync svg{width:12px;height:12px;stroke:currentColor;}
+.sync-lbl{font-size:.72rem;font-weight:600;color:var(--faible-txt);white-space:nowrap;transition:color .25s;}
+.sync-pill.loading .sync-lbl{color:var(--moyenne-txt);}
+.sync-pill.pending .sync-lbl{color:#92620A;}
+.sync-pill.err     .sync-lbl{color:var(--forte-txt);}
+.sync-ico svg{width:11px;height:11px;stroke:var(--faible-txt);transition:stroke .25s;}
+.sync-pill.loading .sync-ico svg{animation:spin 1s linear infinite;stroke:var(--moyenne-txt);}
+.sync-pill.pending .sync-ico svg{stroke:#92620A;}
+.sync-pill.err     .sync-ico svg{stroke:var(--forte-txt);}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 /* Toast fermeture */
 .close-toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#1A1714;color:white;padding:12px 20px;border-radius:12px;font-size:.84rem;z-index:9999;display:flex;align-items:center;gap:12px;box-shadow:0 8px 32px rgba(0,0,0,.25);animation:toastIn .25s ease;}
 @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
@@ -202,7 +208,13 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:1
 <header>
   <div class="header-top">
     <h1 class="app-title">Cyril <em>&amp;</em> Laurie</h1>
-    <span style="font-size:.78rem;color:var(--muted);font-style:italic;">📋 Nos tâches</span>
+    <div class="sync-pill hidden" id="sync-pill" onclick="forcSync()" title="Cliquer pour synchroniser">
+      <div class="sync-dot"></div>
+      <span class="sync-lbl" id="sync-lbl">–</span>
+      <div class="sync-ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" id="sync-svg"><path d="M4 4v6h6M20 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L4 10M3.51 15a9 9 0 0014.85 3.36L20 14"/></svg>
+      </div>
+    </div>
   </div>
   <div class="tabs">
     <button class="tab-btn active" data-tab="active" onclick="switchTab('active')">
@@ -214,20 +226,9 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:1
   </div>
 </header>
 
-<!-- BARRE DE SYNC -->
-<div class="sync-bar hidden" id="sync-bar">
-  <div class="sync-dot"></div>
-  <span class="sync-txt" id="sync-txt">–</span>
-  <span class="sync-time" id="sync-time"></span>
-  <button class="btn-sync" id="btn-sync" onclick="forcSync()" title="Forcer la synchronisation">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4v6h6M20 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L4 10M3.51 15a9 9 0 0014.85 3.36L20 14"/></svg>
-    Sync
-  </button>
-</div>
-
 <!-- TOAST FERMETURE -->
 <div class="close-toast hidden" id="close-toast">
-  <span>⚠️ Des données ne sont pas encore sauvegardées</span>
+  <span>⚠️ Données non encore sauvegardées</span>
   <button class="toast-btn" onclick="forcSync()">Sauvegarder</button>
   <button class="toast-btn" onclick="document.getElementById('close-toast').classList.add('hidden')">Ignorer</button>
 </div>
@@ -345,42 +346,27 @@ let lastSyncOk = null; // timestamp dernière sync réussie
 let syncSpinning = false;
 
 function setSP(cls, txt) {
-  const bar  = document.getElementById("sync-bar");
-  const label = document.getElementById("sync-txt");
-  const time  = document.getElementById("sync-time");
-  const btn   = document.getElementById("btn-sync");
+  const pill = document.getElementById("sync-pill");
+  const lbl  = document.getElementById("sync-lbl");
+  if (!URL_GS) { pill.className = "sync-pill hidden"; return; }
 
-  if (!URL_GS) { bar.className = "sync-bar hidden"; return; }
+  pill.className = "sync-pill " + cls;
 
-  bar.className = "sync-bar " + cls;
+  const labels = {
+    ok:      "Sauvegardé",
+    loading: "Sync…",
+    pending: pendingOps + " en attente",
+    err:     "Hors-ligne"
+  };
+  lbl.textContent = labels[cls] || "–";
 
   if (cls === "ok") {
     lastSyncOk = Date.now();
     pendingOps = 0;
-    label.textContent = "✓ Sauvegardé sur Google Sheets";
-    time.textContent  = "à l'instant";
-    btn.disabled = false;
-    btn.querySelector("svg").style.animation = "";
-    // Cacher après 4 s si tout va bien
-    clearTimeout(window._hideBar);
-    window._hideBar = setTimeout(() => {
-      if (pendingOps === 0) bar.className = "sync-bar hidden";
-    }, 4000);
-  } else if (cls === "loading") {
-    label.textContent = "Synchronisation…";
-    time.textContent  = "";
-    btn.disabled = true;
-    btn.querySelector("svg").style.animation = "spin 1s linear infinite";
-  } else if (cls === "pending") {
-    label.textContent = `⏳ ${pendingOps} modification${pendingOps>1?"s":""} en attente de sauvegarde`;
-    time.textContent  = "";
-    btn.disabled = false;
-    btn.querySelector("svg").style.animation = "";
-  } else if (cls === "err") {
-    label.textContent = "✗ Hors-ligne — données sauvegardées localement uniquement";
-    time.textContent  = lastSyncOk ? "Dernière sync : " + fmtTime(lastSyncOk) : "Jamais synchronisé";
-    btn.disabled = false;
-    btn.querySelector("svg").style.animation = "";
+    clearTimeout(window._hideP);
+    window._hideP = setTimeout(() => {
+      if (pendingOps === 0) pill.className = "sync-pill hidden";
+    }, 3000);
   }
 }
 
@@ -398,10 +384,11 @@ async function forcSync() {
   await fetchR();
 }
 
-// Ajouter l'animation spin dans le CSS dynamiquement
-const styleEl = document.createElement("style");
-styleEl.textContent = `@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`;
-document.head.appendChild(styleEl);
+function startSync() {
+  document.getElementById("sync-pill").className = "sync-pill loading";
+  fetchR();
+  setInterval(fetchR, POLL_MS);
+}
 
 // Protection fermeture fenêtre si données en attente
 window.addEventListener("beforeunload", e => {
