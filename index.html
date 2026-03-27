@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyril & Laurie — Tâches</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,500;0,700;1,300&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#F7F4EF; --surface:#FFFFFF; --border:#E5DFD6;
+  --text:#1A1714; --muted:#9C9088; --accent:#B85C2A; --accent2:#E8D5C4;
+  --forte-bg:#FEF0EE; --forte-txt:#C0392B; --forte-brd:#F5C6C0; --forte-line:#C0392B;
+  --moyenne-bg:#FEF9EE; --moyenne-txt:#B7770D; --moyenne-brd:#F5E4A8; --moyenne-line:#B7770D;
+  --faible-bg:#EEFAF3; --faible-txt:#1E8449; --faible-brd:#A9DFC0; --faible-line:#1E8449;
+  --cyril:#3B82F6; --laurie:#A855F7;
+  --radius:12px; --shadow:0 2px 16px rgba(26,23,20,.07);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Jost',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:100px;}
+
+/* HEADER */
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:18px 28px 0;position:sticky;top:0;z-index:200;box-shadow:0 1px 24px rgba(26,23,20,.06);}
+.header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.app-title{font-family:'Fraunces',serif;font-size:1.55rem;font-weight:500;letter-spacing:-.01em;}
+.app-title em{font-style:italic;color:var(--accent);}
+/* SYNC BAR */
+.sync-bar{display:flex;align-items:center;gap:10px;padding:6px 28px;font-size:.78rem;font-weight:500;border-bottom:1px solid var(--border);transition:background .3s,color .3s;background:var(--faible-bg);color:var(--faible-txt);}
+.sync-bar.loading{background:var(--moyenne-bg);color:var(--moyenne-txt);}
+.sync-bar.err    {background:var(--forte-bg);  color:var(--forte-txt);}
+.sync-bar.pending{background:#FFF8EC;           color:#92620A;border-bottom-color:#F5DBA0;}
+.sync-bar.hidden {display:none;}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0;}
+.sync-bar.loading .sync-dot{animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.sync-txt{flex:1;}
+.sync-time{font-size:.7rem;opacity:.7;margin-left:auto;}
+.btn-sync{padding:3px 12px;border-radius:20px;border:1.5px solid currentColor;background:transparent;font-family:'Jost',sans-serif;font-size:.74rem;font-weight:600;color:inherit;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px;white-space:nowrap;}
+.btn-sync:hover{opacity:.75;}
+.btn-sync:disabled{opacity:.4;cursor:default;}
+.btn-sync svg{width:12px;height:12px;stroke:currentColor;}
+/* Toast fermeture */
+.close-toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#1A1714;color:white;padding:12px 20px;border-radius:12px;font-size:.84rem;z-index:9999;display:flex;align-items:center;gap:12px;box-shadow:0 8px 32px rgba(0,0,0,.25);animation:toastIn .25s ease;}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.close-toast.hidden{display:none;}
+.toast-btn{padding:4px 14px;border-radius:8px;border:1.5px solid rgba(255,255,255,.35);background:transparent;color:white;font-family:'Jost',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;}
+.toast-btn:hover{background:rgba(255,255,255,.15);}
+.tabs{display:flex;}
+.tab-btn{padding:9px 18px;font-family:'Jost',sans-serif;font-size:.82rem;font-weight:500;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:7px;}
+.tab-count{font-size:.7rem;padding:1px 7px;border-radius:20px;background:var(--border);color:var(--muted);transition:all .2s;}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-btn.active .tab-count{background:var(--accent2);color:var(--accent);}
+
+/* FILTRES */
+.filters-bar{padding:12px 28px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--bg);border-bottom:1px solid var(--border);}
+.filter-chip{padding:4px 13px;border-radius:20px;border:1.5px solid var(--border);background:var(--surface);font-family:'Jost',sans-serif;font-size:.78rem;font-weight:500;color:var(--muted);cursor:pointer;transition:all .15s;}
+.filter-chip:hover{border-color:var(--accent);color:var(--accent);}
+.fc-all    {background:var(--text);color:#fff;border-color:var(--text);}
+.fc-cyril  {background:#EFF6FF;color:var(--cyril);border-color:var(--cyril);}
+.fc-laurie {background:#FAF5FF;color:var(--laurie);border-color:var(--laurie);}
+.fc-forte  {background:var(--forte-bg);color:var(--forte-txt);border-color:var(--forte-line);}
+.fc-moyenne{background:var(--moyenne-bg);color:var(--moyenne-txt);border-color:var(--moyenne-line);}
+.fc-faible {background:var(--faible-bg);color:var(--faible-txt);border-color:var(--faible-line);}
+.filter-sep{width:1px;height:18px;background:var(--border);}
+
+/* LISTE */
+.list-wrap{max-width:760px;margin:0 auto;padding:20px 24px;}
+@keyframes rowIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+
+/* LIGNE TÂCHE */
+.task-row{border-radius:var(--radius);border:1.5px solid var(--border);margin-bottom:8px;background:var(--surface);overflow:hidden;transition:box-shadow .2s,transform .2s;animation:rowIn .22s ease;}
+.task-row:hover{box-shadow:var(--shadow);transform:translateY(-1px);}
+.task-row.prio-forte  {background:var(--forte-bg);  border-color:var(--forte-brd);}
+.task-row.prio-moyenne{background:var(--moyenne-bg);border-color:var(--moyenne-brd);}
+.task-row.prio-faible {background:var(--faible-bg); border-color:var(--faible-brd);}
+.task-row::before{content:'';display:block;height:3px;}
+.task-row.prio-forte::before  {background:var(--forte-line);}
+.task-row.prio-moyenne::before{background:var(--moyenne-line);}
+.task-row.prio-faible::before {background:var(--faible-line);}
+
+.task-inner{display:grid;grid-template-columns:34px 1fr auto auto auto auto;align-items:center;gap:0 10px;padding:11px 14px 11px 12px;}
+
+/* Checkbox */
+.task-check{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);background:rgba(255,255,255,.8);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;color:transparent;}
+.task-check:hover{border-color:var(--faible-line);color:var(--faible-line);}
+.task-check svg{width:12px;height:12px;stroke:currentColor;}
+
+/* État coché */
+.task-row.checking .task-check{border-color:var(--faible-line);background:var(--faible-bg);color:var(--faible-txt);}
+.task-row.checking .task-text-cell{text-decoration:line-through;opacity:.45;transition:all .4s;}
+.task-row.checking{opacity:.72;transition:opacity .4s;}
+
+.task-text-cell{font-size:.92rem;font-weight:400;line-height:1.45;color:var(--text);transition:all .3s;word-break:break-word;}
+.task-row.prio-forte   .task-text-cell{color:#7B241C;}
+.task-row.prio-moyenne .task-text-cell{color:#7D6608;}
+.task-row.prio-faible  .task-text-cell{color:#1D6A3C;}
+
+.task-person{font-size:.72rem;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap;}
+.pp-cyril {background:#EFF6FF;color:var(--cyril); border:1px solid #BFDBFE;}
+.pp-laurie{background:#FAF5FF;color:var(--laurie);border:1px solid #E9D5FF;}
+.pp-both  {background:var(--accent2);color:var(--accent);border:1px solid #DFC0A8;}
+
+.task-prio-badge{font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap;}
+.pb-forte  {background:rgba(192,57,43,.12); color:var(--forte-txt);}
+.pb-moyenne{background:rgba(183,119,13,.12);color:var(--moyenne-txt);}
+.pb-faible {background:rgba(30,132,73,.12); color:var(--faible-txt);}
+
+.task-date{font-size:.7rem;color:var(--muted);white-space:nowrap;}
+
+.task-del{width:26px;height:26px;border-radius:8px;border:none;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);opacity:0;transition:all .15s;}
+.task-row:hover .task-del{opacity:1;}
+.task-del:hover{color:var(--forte-txt);background:var(--forte-bg);}
+.task-del svg{width:14px;height:14px;}
+
+.task-timer{font-size:.68rem;color:var(--muted);display:none;padding:0 12px 9px;text-align:right;font-style:italic;}
+.task-row.checking .task-timer{display:block;}
+
+/* NOUVELLE LIGNE */
+.new-task-row{border-radius:var(--radius);border:2px dashed var(--accent);background:#FFFDF9;margin-bottom:8px;padding:13px 15px;animation:rowIn .2s ease;}
+.new-task-top{display:flex;gap:10px;align-items:center;margin-bottom:11px;}
+.new-task-input{flex:1;border:none;background:transparent;outline:none;font-family:'Jost',sans-serif;font-size:.95rem;color:var(--text);padding:3px 0;border-bottom:1.5px solid var(--border);transition:border-color .2s;}
+.new-task-input:focus{border-bottom-color:var(--accent);}
+.new-task-input::placeholder{color:var(--muted);}
+.new-task-options{display:flex;gap:7px;align-items:center;flex-wrap:wrap;}
+.opt-label{font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+.opt-btn{padding:4px 11px;border-radius:20px;border:1.5px solid var(--border);background:var(--surface);font-family:'Jost',sans-serif;font-size:.78rem;font-weight:500;color:var(--muted);cursor:pointer;transition:all .15s;}
+.opt-btn:hover{border-color:var(--accent);color:var(--accent);}
+.opt-btn.s-cyril  {border-color:var(--cyril);  background:#EFF6FF;color:var(--cyril);}
+.opt-btn.s-laurie {border-color:var(--laurie); background:#FAF5FF;color:var(--laurie);}
+.opt-btn.s-both   {border-color:var(--accent); background:var(--accent2);color:var(--accent);}
+.opt-btn.s-forte  {border-color:var(--forte-line); background:var(--forte-bg);  color:var(--forte-txt);}
+.opt-btn.s-moyenne{border-color:var(--moyenne-line);background:var(--moyenne-bg);color:var(--moyenne-txt);}
+.opt-btn.s-faible {border-color:var(--faible-line);background:var(--faible-bg); color:var(--faible-txt);}
+.new-actions{display:flex;gap:7px;margin-left:auto;}
+.btn-ok{padding:5px 16px;background:var(--accent);color:white;border:none;border-radius:8px;font-family:'Jost',sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .15s;}
+.btn-ok:hover{background:#9E4C22;}
+.btn-ko{padding:5px 10px;background:none;color:var(--muted);border:1.5px solid var(--border);border-radius:8px;font-family:'Jost',sans-serif;font-size:.82rem;cursor:pointer;transition:all .15s;}
+.btn-ko:hover{color:var(--forte-txt);border-color:var(--forte-line);}
+
+/* FAB */
+.fab{position:fixed;bottom:28px;right:28px;width:56px;height:56px;border-radius:50%;background:var(--accent);color:white;border:none;cursor:pointer;box-shadow:0 4px 20px rgba(184,92,42,.4);display:flex;align-items:center;justify-content:center;font-size:1.7rem;line-height:1;transition:all .2s;z-index:300;}
+.fab:hover{background:#9E4C22;transform:scale(1.08) rotate(90deg);}
+
+/* EMPTY */
+.empty-state{text-align:center;padding:64px 20px;color:var(--muted);}
+.empty-state .emoji{font-size:2.8rem;margin-bottom:14px;}
+.empty-state p{font-size:.95rem;line-height:1.7;}
+
+/* DONE */
+.done-row{border-radius:var(--radius);border:1.5px solid var(--border);margin-bottom:8px;background:var(--surface);overflow:hidden;}
+.done-row::before{content:'';display:block;height:3px;background:var(--faible-line);opacity:.25;}
+.done-inner{display:grid;grid-template-columns:26px 1fr auto auto;align-items:center;gap:0 10px;padding:10px 14px;opacity:.6;}
+.done-check{color:var(--faible-txt);display:flex;align-items:center;}
+.done-check svg{width:18px;height:18px;}
+.done-text{font-size:.9rem;text-decoration:line-through;color:var(--muted);}
+.done-meta{font-size:.7rem;color:var(--muted);white-space:nowrap;}
+.done-del{width:24px;height:24px;border-radius:6px;border:none;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);opacity:0;transition:all .15s;}
+.done-row:hover .done-del{opacity:1;}
+.done-del:hover{color:var(--forte-txt);background:var(--forte-bg);}
+.done-del svg{width:13px;height:13px;}
+
+/* SETUP MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(26,23,20,.5);display:flex;align-items:center;justify-content:center;z-index:999;padding:20px;}
+.modal-overlay.hidden{display:none;}
+.modal{background:var(--surface);border-radius:18px;padding:28px;max-width:520px;width:100%;box-shadow:0 20px 60px rgba(26,23,20,.2);}
+.modal h2{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:500;margin-bottom:14px;}
+.modal ol{padding-left:18px;font-size:.84rem;line-height:1.9;}
+.modal code{background:var(--bg);padding:1px 6px;border-radius:5px;font-size:.79rem;font-family:monospace;color:var(--accent);}
+.modal-inp{width:100%;padding:10px 14px;margin-top:14px;font-family:'Jost',sans-serif;font-size:.85rem;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);outline:none;transition:border-color .2s;}
+.modal-inp:focus{border-color:var(--accent);}
+.modal-btn{margin-top:10px;width:100%;padding:11px;background:var(--accent);color:white;border:none;border-radius:10px;font-family:'Jost',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;}
+.modal-btn:hover{background:#9E4C22;}
+.modal-skip{display:block;text-align:center;margin-top:10px;font-size:.78rem;color:var(--muted);cursor:pointer;text-decoration:underline;}
+
+@media(max-width:600px){
+  .list-wrap{padding:14px;}
+  .task-inner{grid-template-columns:32px 1fr auto;}
+  .task-prio-badge,.task-date{display:none;}
+  .filters-bar,.header-top,header{padding-left:16px;padding-right:16px;}
+  .fab{bottom:20px;right:20px;}
+}
+</style>
+</head>
+<body>
+
+<!-- SETUP MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <h2>⚙️ Connexion Google Sheets</h2>
+    <ol>
+      <li>Ouvrez <a href="https://sheets.new" target="_blank"><strong>sheets.new</strong></a> (Gmail perso) → nommez le fichier <code>todo-famille</code></li>
+      <li><strong>Extensions → Apps Script</strong> → effacez tout → collez le code du fichier <code>apps-script.gs</code> joint</li>
+      <li><strong>Déployer → Nouveau déploiement</strong> → Type : <em>Application Web</em> → Accès : <em>Tout le monde</em></li>
+      <li>Copiez l'URL <code>/exec</code> et collez-la ici :</li>
+    </ol>
+    <input class="modal-inp" id="modal-url" type="text" placeholder="https://script.google.com/macros/s/…/exec">
+    <button class="modal-btn" onclick="saveUrl()">Enregistrer &amp; démarrer</button>
+    <span class="modal-skip" onclick="skipSetup()">Utiliser hors-ligne (données locales uniquement)</span>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="header-top">
+    <h1 class="app-title">Cyril <em>&amp;</em> Laurie</h1>
+    <span style="font-size:.78rem;color:var(--muted);font-style:italic;">📋 Nos tâches</span>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="active" onclick="switchTab('active')">
+      À faire <span class="tab-count" id="cnt-active">0</span>
+    </button>
+    <button class="tab-btn" data-tab="done" onclick="switchTab('done')">
+      Terminées <span class="tab-count" id="cnt-done">0</span>
+    </button>
+  </div>
+</header>
+
+<!-- BARRE DE SYNC -->
+<div class="sync-bar hidden" id="sync-bar">
+  <div class="sync-dot"></div>
+  <span class="sync-txt" id="sync-txt">–</span>
+  <span class="sync-time" id="sync-time"></span>
+  <button class="btn-sync" id="btn-sync" onclick="forcSync()" title="Forcer la synchronisation">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4v6h6M20 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L4 10M3.51 15a9 9 0 0014.85 3.36L20 14"/></svg>
+    Sync
+  </button>
+</div>
+
+<!-- TOAST FERMETURE -->
+<div class="close-toast hidden" id="close-toast">
+  <span>⚠️ Des données ne sont pas encore sauvegardées</span>
+  <button class="toast-btn" onclick="forcSync()">Sauvegarder</button>
+  <button class="toast-btn" onclick="document.getElementById('close-toast').classList.add('hidden')">Ignorer</button>
+</div>
+
+
+<div class="filters-bar" id="filters-bar">
+  <button class="filter-chip fc-all" data-fp="all"    onclick="setFP(this,'all')">Tous</button>
+  <button class="filter-chip"        data-fp="cyril"  onclick="setFP(this,'cyril')">Cyril</button>
+  <button class="filter-chip"        data-fp="laurie" onclick="setFP(this,'laurie')">Laurie</button>
+  <div class="filter-sep"></div>
+  <button class="filter-chip fc-all" data-fpr="all"     onclick="setFPR(this,'all')">Toutes</button>
+  <button class="filter-chip"        data-fpr="forte"   onclick="setFPR(this,'forte')">🔴 Forte</button>
+  <button class="filter-chip"        data-fpr="moyenne" onclick="setFPR(this,'moyenne')">🟡 Moyenne</button>
+  <button class="filter-chip"        data-fpr="faible"  onclick="setFPR(this,'faible')">🟢 Faible</button>
+</div>
+
+<!-- LISTE -->
+<div class="list-wrap" id="list-wrap"></div>
+
+<!-- FAB -->
+<button class="fab" onclick="openNewRow()" title="Nouvelle tâche">+</button>
+
+<script>
+// ──────────────────────────────────────────────
+//  CONSTANTES & ÉTAT
+// ──────────────────────────────────────────────
+const SKEY      = "todo_url_v3";
+const LTASKS    = "todo_tasks_v3";
+const LDONE     = "todo_done_v3";
+const POLL_MS   = 6000;
+const DELAY_MS  = 15 * 60 * 1000;   // 15 min
+const MAX_DONE  = 20;
+const DAYS_MS   = 14 * 86400 * 1000;
+
+let URL_GS  = localStorage.getItem(SKEY) || "";
+let tasks   = parse(localStorage.getItem(LTASKS));
+let done    = parse(localStorage.getItem(LDONE));
+let fperson = "all", fprio = "all", tab = "active";
+let adding  = false;
+let newP    = "cyril,laurie", newPr = "moyenne";
+let timers  = {};   // id → {timeout, interval}
+
+// ──────────────────────────────────────────────
+//  BOOT
+// ──────────────────────────────────────────────
+if (URL_GS) {
+  document.getElementById("modal-overlay").classList.add("hidden");
+  startSync();
+} else {
+  render();
+}
+
+function saveUrl() {
+  const v = document.getElementById("modal-url").value.trim();
+  if (!v.includes("script.google.com")) { alert("URL invalide."); return; }
+  URL_GS = v; localStorage.setItem(SKEY, v);
+  document.getElementById("modal-overlay").classList.add("hidden");
+  startSync();
+}
+function skipSetup() {
+  document.getElementById("modal-overlay").classList.add("hidden");
+  render();
+}
+
+function startSync() {
+  document.getElementById("sync-bar").className = "sync-bar loading";
+  fetchR();
+  setInterval(fetchR, POLL_MS);
+}
+
+async function fetchR() {
+  if (!URL_GS) return;
+  setSP("loading","");
+  try {
+    const r = await fetch(URL_GS + "?action=getAll&t=" + Date.now());
+    const d = await r.json();
+    tasks = d.tasks || [];
+    done  = clean(d.done || []);
+    save(); markSaved(); render();
+  } catch { setSP("err",""); }
+}
+
+function save() {
+  localStorage.setItem(LTASKS, JSON.stringify(tasks));
+  localStorage.setItem(LDONE,  JSON.stringify(done));
+}
+
+async function push(payload) {
+  save();
+  if (!URL_GS) { render(); return; }
+  markPending();
+  try {
+    // On encode la payload en paramètres GET pour éviter les blocages CORS/OPTIONS
+    let url = URL_GS + "?action=" + payload.action;
+    if (payload.task)     url += "&task="     + encodeURIComponent(JSON.stringify(payload.task));
+    if (payload.id)       url += "&id="       + encodeURIComponent(payload.id);
+    if (payload.doneTask) url += "&doneTask=" + encodeURIComponent(JSON.stringify(payload.doneTask));
+    url += "&t=" + Date.now(); // anti-cache
+
+    const r = await fetch(url);
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    await fetchR();
+  } catch(e) {
+    console.error("Push error:", e);
+    setSP("err","");
+  }
+}
+
+// ──────────────────────────────────────────────
+//  ÉTAT DE SYNC
+// ──────────────────────────────────────────────
+let pendingOps = 0;   // nombre d'opérations en attente de confirmation serveur
+let lastSyncOk = null; // timestamp dernière sync réussie
+let syncSpinning = false;
+
+function setSP(cls, txt) {
+  const bar  = document.getElementById("sync-bar");
+  const label = document.getElementById("sync-txt");
+  const time  = document.getElementById("sync-time");
+  const btn   = document.getElementById("btn-sync");
+
+  if (!URL_GS) { bar.className = "sync-bar hidden"; return; }
+
+  bar.className = "sync-bar " + cls;
+
+  if (cls === "ok") {
+    lastSyncOk = Date.now();
+    pendingOps = 0;
+    label.textContent = "✓ Sauvegardé sur Google Sheets";
+    time.textContent  = "à l'instant";
+    btn.disabled = false;
+    btn.querySelector("svg").style.animation = "";
+    // Cacher après 4 s si tout va bien
+    clearTimeout(window._hideBar);
+    window._hideBar = setTimeout(() => {
+      if (pendingOps === 0) bar.className = "sync-bar hidden";
+    }, 4000);
+  } else if (cls === "loading") {
+    label.textContent = "Synchronisation…";
+    time.textContent  = "";
+    btn.disabled = true;
+    btn.querySelector("svg").style.animation = "spin 1s linear infinite";
+  } else if (cls === "pending") {
+    label.textContent = `⏳ ${pendingOps} modification${pendingOps>1?"s":""} en attente de sauvegarde`;
+    time.textContent  = "";
+    btn.disabled = false;
+    btn.querySelector("svg").style.animation = "";
+  } else if (cls === "err") {
+    label.textContent = "✗ Hors-ligne — données sauvegardées localement uniquement";
+    time.textContent  = lastSyncOk ? "Dernière sync : " + fmtTime(lastSyncOk) : "Jamais synchronisé";
+    btn.disabled = false;
+    btn.querySelector("svg").style.animation = "";
+  }
+}
+
+function markPending() {
+  pendingOps++;
+  setSP("pending", "");
+}
+function markSaved() {
+  setSP("ok", "");
+}
+
+async function forcSync() {
+  if (!URL_GS) return;
+  setSP("loading","");
+  await fetchR();
+}
+
+// Ajouter l'animation spin dans le CSS dynamiquement
+const styleEl = document.createElement("style");
+styleEl.textContent = `@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`;
+document.head.appendChild(styleEl);
+
+// Protection fermeture fenêtre si données en attente
+window.addEventListener("beforeunload", e => {
+  if (pendingOps > 0) {
+    e.preventDefault();
+    e.returnValue = "Des modifications ne sont pas encore synchronisées. Voulez-vous vraiment fermer ?";
+    document.getElementById("close-toast").classList.remove("hidden");
+    return e.returnValue;
+  }
+});
+
+// Mise à jour affichage "il y a X min" toutes les 30s
+setInterval(() => {
+  if (lastSyncOk && pendingOps === 0) {
+    const el = document.getElementById("sync-time");
+    if (el) el.textContent = fmtAgo(lastSyncOk);
+  }
+}, 30000);
+
+function fmtTime(ts) {
+  return new Date(ts).toLocaleTimeString("fr-FR", {hour:"2-digit", minute:"2-digit"});
+}
+function fmtAgo(ts) {
+  const d = Math.round((Date.now()-ts)/60000);
+  if (d < 1) return "à l'instant";
+  if (d < 60) return `il y a ${d} min`;
+  return "il y a " + Math.round(d/60) + "h";
+}
+function clean(arr) {
+  const cut = Date.now() - DAYS_MS;
+  return arr.filter((t,i) => i < MAX_DONE && t.doneAt > cut);
+}
+
+// ──────────────────────────────────────────────
+//  CRUD
+// ──────────────────────────────────────────────
+function addTask(text, person, prio) {
+  const t = { id:"t"+Date.now(), text, person, prio, createdAt:Date.now() };
+  tasks.unshift(t);
+  push({ action:"add", task:t });
+}
+
+function delTask(id) {
+  tasks = tasks.filter(t => t.id !== id);
+  clearTimer(id);
+  push({ action:"delete", id });
+}
+
+function toDone(id) {
+  const t = tasks.find(x => x.id === id);
+  if (!t) return;
+  tasks = tasks.filter(x => x.id !== id);
+  done.unshift({ ...t, doneAt:Date.now() });
+  done = clean(done);
+  clearTimer(id);
+  push({ action:"complete", id, doneTask:{ ...t, doneAt:Date.now() } });
+  render();
+}
+
+function delDone(id) {
+  done = done.filter(t => t.id !== id);
+  push({ action:"deleteDone", id });
+}
+
+// ──────────────────────────────────────────────
+//  CHECK / UNCHECK
+// ──────────────────────────────────────────────
+function toggleCheck(id) {
+  const row = document.getElementById("r"+id);
+  if (!row) return;
+  if (row.classList.contains("checking")) {
+    // annuler
+    clearTimer(id);
+    row.classList.remove("checking");
+    const te = row.querySelector(".task-timer");
+    if (te) te.textContent = "";
+  } else {
+    row.classList.add("checking");
+    startTimer(id, row);
+  }
+}
+
+function startTimer(id, row) {
+  let rem = Math.round(DELAY_MS / 1000);
+  const te = row.querySelector(".task-timer");
+  tick(te, rem);
+  const iv = setInterval(() => {
+    rem--;
+    if (rem <= 0) { clearInterval(iv); return; }
+    tick(te, rem);
+  }, 1000);
+  const to = setTimeout(() => {
+    clearInterval(iv);
+    toDone(id);
+  }, DELAY_MS);
+  timers[id] = { to, iv };
+}
+
+function clearTimer(id) {
+  if (timers[id]) {
+    clearTimeout(timers[id].to);
+    clearInterval(timers[id].iv);
+    delete timers[id];
+  }
+}
+
+function tick(el, s) {
+  if (!el) return;
+  const m = Math.floor(s/60), sec = s%60;
+  el.textContent = `✔ Fait — archivage dans ${m}:${String(sec).padStart(2,"0")} (cliquez pour annuler)`;
+}
+
+// ──────────────────────────────────────────────
+//  RENDER
+// ──────────────────────────────────────────────
+const PO = {forte:0,moyenne:1,faible:2};
+const PL = {forte:"🔴 Forte",moyenne:"🟡 Moyenne",faible:"🟢 Faible"};
+const PeL = {cyril:"Cyril",laurie:"Laurie","cyril,laurie":"Cyril & Laurie"};
+const PeC = {cyril:"pp-cyril",laurie:"pp-laurie","cyril,laurie":"pp-both"};
+
+function render() {
+  document.getElementById("cnt-active").textContent = tasks.length;
+  document.getElementById("cnt-done").textContent   = done.length;
+  const wrap = document.getElementById("list-wrap");
+  tab === "active" ? renderActive(wrap) : renderDone(wrap);
+}
+
+function renderActive(wrap) {
+  // Nettoyer sauf la ligne d'ajout
+  [...wrap.children].forEach(c => {
+    if (c.id !== "new-row") c.remove();
+  });
+
+  // Filtrer + trier
+  let list = tasks
+    .filter(t => {
+      const mp  = fperson === "all" || t.person === fperson || t.person === "cyril,laurie";
+      const mpr = fprio   === "all" || t.prio === fprio;
+      return mp && mpr;
+    })
+    .sort((a,b) => (PO[a.prio]??3)-(PO[b.prio]??3) || b.createdAt-a.createdAt);
+
+  if (list.length === 0 && !adding) {
+    wrap.insertAdjacentHTML("beforeend",
+      `<div class="empty-state"><div class="emoji">✨</div><p>Aucune tâche.<br>Cliquez sur <strong>+</strong> pour commencer !</p></div>`);
+    return;
+  }
+
+  list.forEach(t => {
+    if (document.getElementById("r"+t.id)) return;
+    const el = document.createElement("div");
+    el.className = "task-row prio-"+(t.prio||"");
+    el.id = "r"+t.id;
+    el.innerHTML = `
+      <div class="task-inner">
+        <button class="task-check" onclick="toggleCheck('${t.id}')" title="Cocher / décocher">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
+        </button>
+        <span class="task-text-cell">${esc(t.text)}</span>
+        <span class="task-person ${PeC[t.person]||'pp-both'}">${PeL[t.person]||t.person}</span>
+        <span class="task-prio-badge pb-${t.prio||'faible'}">${PL[t.prio]||''}</span>
+        <span class="task-date">${fmt(t.createdAt)}</span>
+        <button class="task-del" onclick="delTask('${t.id}')" title="Supprimer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="task-timer"></div>`;
+    wrap.appendChild(el);
+    // Restaurer état coché si le timer tourne encore
+    if (timers[t.id]) {
+      el.classList.add("checking");
+    }
+  });
+}
+
+function renderDone(wrap) {
+  wrap.innerHTML = "";
+  if (!done.length) {
+    wrap.innerHTML = `<div class="empty-state"><div class="emoji">📋</div><p>Aucune tâche terminée récente.</p></div>`;
+    return;
+  }
+  done.forEach(t => {
+    const el = document.createElement("div");
+    el.className = "done-row";
+    el.innerHTML = `
+      <div class="done-inner">
+        <div class="done-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-5"/></svg></div>
+        <span class="done-text">${esc(t.text)}</span>
+        <span class="done-meta">${PeL[t.person]||t.person} · ${fmt(t.doneAt)}</span>
+        <button class="done-del" onclick="delDone('${t.id}')" title="Effacer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>`;
+    wrap.appendChild(el);
+  });
+}
+
+// ──────────────────────────────────────────────
+//  NOUVELLE LIGNE INLINE
+// ──────────────────────────────────────────────
+function openNewRow() {
+  if (adding) { document.getElementById("new-inp")?.focus(); return; }
+  adding = true;
+  if (tab !== "active") switchTab("active");
+  newP = "cyril,laurie"; newPr = "moyenne";
+  const wrap = document.getElementById("list-wrap");
+  const div  = document.createElement("div");
+  div.className = "new-task-row"; div.id = "new-row";
+  div.innerHTML = `
+    <div class="new-task-top">
+      <input class="new-task-input" id="new-inp" type="text" placeholder="Décrire la tâche…" autocomplete="off">
+    </div>
+    <div class="new-task-options">
+      <span class="opt-label">Pour</span>
+      <button class="opt-btn s-both"   data-p="cyril,laurie" onclick="selP(this)">Cyril &amp; Laurie</button>
+      <button class="opt-btn"          data-p="cyril"        onclick="selP(this)">Cyril</button>
+      <button class="opt-btn"          data-p="laurie"       onclick="selP(this)">Laurie</button>
+      <span class="opt-label" style="margin-left:6px">Urgence</span>
+      <button class="opt-btn"          data-pr="forte"   onclick="selPr(this)">🔴 Forte</button>
+      <button class="opt-btn s-moyenne"data-pr="moyenne" onclick="selPr(this)">🟡 Moyenne</button>
+      <button class="opt-btn"          data-pr="faible"  onclick="selPr(this)">🟢 Faible</button>
+      <div class="new-actions">
+        <button class="btn-ko" onclick="closeNewRow()">Annuler</button>
+        <button class="btn-ok" onclick="confirmRow()">✓ Ajouter</button>
+      </div>
+    </div>`;
+  wrap.insertBefore(div, wrap.firstChild);
+  document.getElementById("new-inp").focus();
+  document.getElementById("new-inp").addEventListener("keydown", e => {
+    if (e.key === "Enter")  confirmRow();
+    if (e.key === "Escape") closeNewRow();
+  });
+}
+
+function selP(btn) {
+  document.querySelectorAll("#new-row [data-p]").forEach(b => b.className = "opt-btn");
+  newP = btn.dataset.p;
+  btn.classList.add("s-"+(newP==="cyril,laurie"?"both":newP));
+}
+function selPr(btn) {
+  document.querySelectorAll("#new-row [data-pr]").forEach(b => b.className = "opt-btn");
+  newPr = btn.dataset.pr;
+  btn.classList.add("s-"+newPr);
+}
+function confirmRow() {
+  const txt = document.getElementById("new-inp")?.value.trim();
+  if (!txt) { document.getElementById("new-inp")?.focus(); return; }
+  addTask(txt, newP, newPr);
+  closeNewRow();
+  render();
+}
+function closeNewRow() {
+  document.getElementById("new-row")?.remove();
+  adding = false;
+}
+
+// ──────────────────────────────────────────────
+//  FILTRES & ONGLETS
+// ──────────────────────────────────────────────
+function setFP(btn, val) {
+  fperson = val;
+  document.querySelectorAll("[data-fp]").forEach(b => b.className = "filter-chip");
+  btn.classList.add("fc-"+val);
+  render();
+}
+function setFPR(btn, val) {
+  fprio = val;
+  document.querySelectorAll("[data-fpr]").forEach(b => b.className = "filter-chip");
+  btn.classList.add("fc-"+val);
+  render();
+}
+function switchTab(t) {
+  tab = t;
+  closeNewRow();
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === t));
+  document.getElementById("filters-bar").style.display = t==="active" ? "flex" : "none";
+  render();
+}
+
+// ──────────────────────────────────────────────
+//  UTILS
+// ──────────────────────────────────────────────
+function esc(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function fmt(ts) { return new Date(ts).toLocaleDateString("fr-FR",{day:"numeric",month:"short"}); }
+function parse(s) { try { return JSON.parse(s)||[]; } catch { return []; } }
+
+render();
+</script>
+</body>
+</html>
